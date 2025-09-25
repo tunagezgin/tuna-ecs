@@ -2,29 +2,30 @@ version: 0.2
 
 env:
   variables:
-    REPOSITORY_NAME: tuna/my-app       # ECR repository
-    AWS_REGION: us-east-1              # AWS region
+    REPOSITORY_NAME: tuna/my-app       # ECR repository adı
+    AWS_REGION: us-east-1              # AWS bölgesi
+    IMAGE_TAG: latest                   # Image tag stratejisi
 
 phases:
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
-      - 677276116587=$(aws sts get-caller-identity --query Account --output text)
-      - 677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app=677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app
-      - echo "677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app: 677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app"
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app
-      - latest=${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - REPOSITORY_URI=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME
+      - echo "Repository URI: $REPOSITORY_URI"
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
   build:
     commands:
-      - echo "Build started on `date`"
-      - docker build -t tuna/my-app:latest .
-      - docker tag $REPOSITORY_NAME:$IMAGE_TAG 677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app:latest
+      - echo "Building the Docker image..."
+      - docker build -t $REPOSITORY_NAME:$IMAGE_TAG .
+      - docker tag $REPOSITORY_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      - echo "Pushing image to ECR..."
-      - docker push 677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app:latest
-      - echo "Creating imagedefinitions.json..."
-      - printf '[{"name":"my-app","imageUri":"%s"}]' 677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app:latest > imagedefinitions.json
+      - echo "Pushing Docker image to ECR..."
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Creating imagedefinitions.json for ECS deploy..."
+      - printf '[{"name":"my-app","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+
 artifacts:
   files:
     - imagedefinitions.json
