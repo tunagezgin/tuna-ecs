@@ -2,28 +2,30 @@ version: 0.2
 
 env:
   variables:
-    REPOSITORY_NAME: tuna/my-app       # ECR repository adı
-    AWS_REGION: us-east-1              # AWS bölgesi
-    IMAGE_TAG: latest                   # Image tag stratejisi
+    REPOSITORY_NAME: tuna/my-app
+    AWS_REGION: us-east-1
+    IMAGE_TAG: latest
 
 phases:
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR..."
+      - echo Logging in to Amazon ECR...
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - REPOSITORY_URI=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME
-      - echo "Repository URI: $REPOSITORY_URI"
+      - echo Repository URI: $REPOSITORY_URI
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+
   build:
     commands:
-      - echo "Building the Docker image..."
+      - echo Building the Docker image...
       - docker build -t $REPOSITORY_NAME:$IMAGE_TAG .
       - docker tag $REPOSITORY_NAME:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+
   post_build:
     commands:
-      - echo "Pushing Docker image to ECR..."
+      - echo Pushing Docker image to ECR...
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo "Creating imagedefinitions.json for ECS deploy..."
+      - echo Creating imagedefinitions.json for ECS deploy...
       - printf '[{"name":"my-app","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
