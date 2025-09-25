@@ -10,7 +10,7 @@ phases:
     commands:
       - echo "Logging in to Amazon ECR..."
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-      - REPOSITORY_URI=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME
+      - 677276116587.dkr.ecr.us-east-1.amazonaws.com/tuna/my-app=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME
       - echo "Repository URI: $REPOSITORY_URI"
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION}
